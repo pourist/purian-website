@@ -1,0 +1,25 @@
+{
+  "type": "module",
+  "name": "purian",
+  "version": "1.0.0",
+  "description": "Static site for Purian.",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pourist/purian-website.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/pourist/purian-website/issues"
+  },
+  "homepage": "https://github.com/pourist/purian-website#readme",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.86.0",
+    "resend": "^6.5.2"
+  }
+}

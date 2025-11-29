@@ -32,7 +32,7 @@ export const translations = {
       "Purian entwickelt natürliche, minimal komponierte Seifen und Shampoobars. Mit Sorgfalt in Berlin gefertigt. Launch 2026.",
     notifyLabel:
       "Trage dich ein und erhalte zum Start einen besonderen Rabatt.",
-    notifyCta: "Benachrichtige mich",
+    notifyCta: "Anmelden",
     notifyHint:
       "Kein Spam. Nur eine E-Mail, wenn wir starten.",
     aboutTitle: "Über Purian",
