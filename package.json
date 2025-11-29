@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/pourist/purian-website#readme",
   "dependencies": {
-    "@supabase/supabase-js": "^2.86.0"
+    "@supabase/supabase-js": "^2.86.0",
+    "resend": "^6.5.2"
   }
 }
