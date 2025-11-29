@@ -4,6 +4,8 @@ export const translations = {
     heroTitle: "Natural. Minimal. Pure.",
     heroText:
       "Purian crafts natural, minimal-ingredient soaps and shampoo bars. Made with care in Berlin. Launching in 2026.",
+    discountNote:
+      "Be the first to know when we launch and receive an exclusive discount.",
     notifyLabel: "Be the first to know and receive a launch discount.",
     notifyCta: "Notify me",
     notifyHint: "No spam. Just a single email when we launch.",
@@ -30,6 +32,8 @@ export const translations = {
     heroTitle: "Natürlich. Minimal. Rein.",
     heroText:
       "Purian entwickelt natürliche, minimal komponierte Seifen und Shampoobars. Mit Sorgfalt in Berlin gefertigt. Launch 2026.",
+    discountNote:
+      "Erfahre als Erste oder Erster vom Start und erhalte einen exklusiven Rabatt.",
     notifyLabel:
       "Trage dich ein und erhalte zum Start einen besonderen Rabatt.",
     notifyCta: "Anmelden",
