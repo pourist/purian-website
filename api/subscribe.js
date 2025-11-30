@@ -155,9 +155,55 @@ export default async function handler(req, res) {
   const resend = new Resend(process.env.RESEND_API_KEY);
 
   try {
+    // ------------------------------------------------------------
+    // Step 5.1: Email Abuse Prevention - throttle per email (1/day)
+    // ------------------------------------------------------------
+    const { data: existingEntries } = await supabase
+      .from("waitlist")
+      .select("created_at")
+      .eq("email", email.toLowerCase())
+      .order("created_at", { ascending: false })
+      .limit(1);
+
+    if (existingEntries && existingEntries.length > 0) {
+      const last = new Date(existingEntries[0].created_at);
+      const now = new Date();
+      const hours = (now - last) / (1000 * 60 * 60);
+
+      if (hours < 24) {
+        // Return OK but DO NOT send email again
+        return res.status(200).json({ ok: true });
+      }
+    }
+
+    // ------------------------------------------------------------
+    // Step 5.2: IP-based abuse detection
+    // max 20 entries per IP per hour
+    // ------------------------------------------------------------
+    const { data: recentIpEntries } = await supabase
+      .from("waitlist")
+      .select("id")
+      .eq("ip", ip)
+      .gte("created_at", new Date(Date.now() - 60 * 60 * 1000).toISOString());
+
+    if (recentIpEntries && recentIpEntries.length > 20) {
+      return res.status(429).json({
+        error: "Too many requests from this IP"
+      });
+    }
+
+    // ------------------------------------------------------------
+    // Insert new record (with IP)
+    // ------------------------------------------------------------
     const { error } = await supabase
       .from("waitlist")
-      .insert([{ email: email.toLowerCase(), lang: lang || "en" }]);
+      .insert([
+        {
+          email: email.toLowerCase(),
+          lang: lang || "en",
+          ip
+        }
+      ]);
 
     if (error && error.code !== "23505") {
       throw error;
