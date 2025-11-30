@@ -19,7 +19,6 @@ function rateLimit(req, res) {
   const now = Date.now();
   const entry = ipStore.get(ip) || { count: 0, windowStart: now };
 
-  // Reset window
   if (now - entry.windowStart > WINDOW_MS) {
     ipStore.set(ip, { count: 1, windowStart: now });
     return true;
@@ -39,35 +38,67 @@ function rateLimit(req, res) {
 }
 
 // ------------------------------------------------------------
+// Turnstile verification
+// ------------------------------------------------------------
+async function verifyTurnstile(token, ip) {
+  const secret = process.env.TURNSTILE_SECRET_KEY;
+
+  const response = await fetch(
+    "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        secret,
+        response: token,
+        remoteip: ip
+      })
+    }
+  );
+
+  const data = await response.json();
+  return data.success === true;
+}
+
+// ------------------------------------------------------------
 // Main handler
 // ------------------------------------------------------------
 export default async function handler(req, res) {
-  // Rate limit check
-  if (!rateLimit(req, res)) {
-    return; // Already responded with 429
-  }
+  // Rate limit check already protects before heavy work
+  if (!rateLimit(req, res)) return;
 
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { email, lang } = req.body || {};
+  const { email, lang, token } = req.body || {};
+
+  if (!token) {
+    return res.status(400).json({ error: "Missing verification token" });
+  }
+
+  const ip =
+    req.headers["x-forwarded-for"]?.split(",")[0].trim() ||
+    req.connection?.remoteAddress ||
+    "unknown";
+
+  const verified = await verifyTurnstile(token, ip);
+  if (!verified) {
+    return res.status(400).json({ error: "Bot verification failed" });
+  }
 
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return res.status(400).json({ error: "Invalid email" });
   }
 
-  // Initialize Supabase client
   const supabase = createClient(
     process.env.SUPABASE_URL,
     process.env.SUPABASE_ANON_KEY
   );
 
-  // Initialize Resend client
   const resend = new Resend(process.env.RESEND_API_KEY);
 
   try {
-    // 1. Insert into Supabase
     const { error } = await supabase
       .from("waitlist")
       .insert([
@@ -77,12 +108,10 @@ export default async function handler(req, res) {
         }
       ]);
 
-    // Ignore duplicate entries (error code 23505)
     if (error && error.code !== "23505") {
       throw error;
     }
 
-    // 2. Prepare localized email
     const subject =
       lang === "de"
         ? "Danke! Du bist auf der Purian-Warteliste."
@@ -111,7 +140,6 @@ Crafted with care in Berlin.
 Purian
         `;
 
-    // 3. Send thank-you email
     await resend.emails.send({
       from: "Purian <no-reply@puriansoap.de>",
       to: email,

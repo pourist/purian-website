@@ -12,7 +12,6 @@ function setLanguage(lang) {
 
   htmlTag.lang = lang;
 
-  // apply active state
   langLinks.forEach((link) => {
     if (link.dataset.lang === lang) {
       link.classList.add("lang-active");
@@ -21,7 +20,6 @@ function setLanguage(lang) {
     }
   });
 
-  // replace text content for all i18n keys
   document.querySelectorAll("[data-i18n-key]").forEach((el) => {
     const key = el.dataset.i18nKey;
     if (dict[key]) {
@@ -39,7 +37,6 @@ langLinks.forEach((link) => {
   });
 });
 
-// initial language
 const storedLang = localStorage.getItem("purian-lang") || "en";
 setLanguage(storedLang);
 
@@ -57,6 +54,12 @@ if (notifyForm) {
     const emailInput = notifyForm.querySelector("input[type='email']");
     const email = emailInput.value.trim();
 
+    // STEP 2: Get Turnstile token
+    const tokenInput = notifyForm.querySelector(
+      "input[name='cf-turnstile-response']"
+    );
+    const token = tokenInput ? tokenInput.value : null;
+
     messageEl.textContent = "";
     messageEl.className = "notify-message";
 
@@ -66,11 +69,17 @@ if (notifyForm) {
       return;
     }
 
+    if (!token) {
+      messageEl.textContent = currentDict.errorMessage;
+      messageEl.classList.add("error");
+      return;
+    }
+
     try {
       const res = await fetch("/api/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, lang: formLang })
+        body: JSON.stringify({ email, lang: formLang, token })
       });
 
       if (!res.ok) {
@@ -80,6 +89,11 @@ if (notifyForm) {
       emailInput.value = "";
       messageEl.textContent = currentDict.successMessage;
       messageEl.classList.add("success");
+
+      // Reset Turnstile widget
+      if (window.turnstile) {
+        turnstile.reset();
+      }
     } catch (err) {
       console.error(err);
       messageEl.textContent = currentDict.errorMessage;

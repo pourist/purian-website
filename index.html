@@ -45,6 +45,13 @@
 
     <link rel="stylesheet" href="style.css" />
 
+    <!-- STEP 2: Turnstile script -->
+    <script
+      src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+      async
+      defer
+    ></script>
+
     <style>
       /* Hidden SEO text for accessibility and semantic clarity */
       .visually-hidden {
@@ -121,6 +128,13 @@
                 Notify me
               </button>
             </div>
+
+            <!-- STEP 2: Turnstile widget -->
+            <div
+              class="cf-turnstile"
+              data-sitekey="YOUR_TURNSTILE_SITE_KEY"
+              style="margin-top: 0.6rem"
+            ></div>
 
             <p id="notify-message" class="notify-message" aria-live="polite"></p>
           </form>
