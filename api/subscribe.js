@@ -38,6 +38,52 @@ function rateLimit(req, res) {
 }
 
 // ------------------------------------------------------------
+// Step 4: Strict Content-Type, Body Limit, JSON Validation
+// ------------------------------------------------------------
+
+async function readJsonBody(req, res) {
+  // Enforce correct content-type
+  if (req.headers["content-type"] !== "application/json") {
+    res.status(400).json({ error: "Invalid content type" });
+    return null;
+  }
+
+  return new Promise((resolve) => {
+    let data = "";
+    const MAX_BODY_SIZE = 10 * 1024; // 10KB
+
+    req.on("data", (chunk) => {
+      data += chunk;
+      if (data.length > MAX_BODY_SIZE) {
+        res.status(413).json({ error: "Request body too large" });
+        resolve(null);
+        req.destroy();
+      }
+    });
+
+    req.on("end", () => {
+      try {
+        const json = JSON.parse(data);
+
+        // Reject extra fields
+        const allowed = ["email", "lang", "token"];
+        for (const key of Object.keys(json)) {
+          if (!allowed.includes(key)) {
+            res.status(400).json({ error: "Unexpected field" });
+            return resolve(null);
+          }
+        }
+
+        resolve(json);
+      } catch (err) {
+        res.status(400).json({ error: "Malformed JSON" });
+        resolve(null);
+      }
+    });
+  });
+}
+
+// ------------------------------------------------------------
 // Turnstile verification
 // ------------------------------------------------------------
 async function verifyTurnstile(token, ip) {
@@ -64,14 +110,18 @@ async function verifyTurnstile(token, ip) {
 // Main handler
 // ------------------------------------------------------------
 export default async function handler(req, res) {
-  // Rate limit check already protects before heavy work
+  // Rate limit check
   if (!rateLimit(req, res)) return;
 
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { email, lang, token } = req.body || {};
+  // Step 4: safe body parsing
+  const body = await readJsonBody(req, res);
+  if (!body) return;
+
+  const { email, lang, token } = body;
 
   if (!token) {
     return res.status(400).json({ error: "Missing verification token" });
@@ -87,7 +137,13 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Bot verification failed" });
   }
 
-  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  // Email validation
+  if (
+    !email ||
+    typeof email !== "string" ||
+    email.length > 320 || // maximum allowed email length universally
+    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+  ) {
     return res.status(400).json({ error: "Invalid email" });
   }
 
@@ -101,12 +157,7 @@ export default async function handler(req, res) {
   try {
     const { error } = await supabase
       .from("waitlist")
-      .insert([
-        {
-          email: email.toLowerCase(),
-          lang: lang || "en"
-        }
-      ]);
+      .insert([{ email: email.toLowerCase(), lang: lang || "en" }]);
 
     if (error && error.code !== "23505") {
       throw error;
@@ -117,24 +168,20 @@ export default async function handler(req, res) {
         ? "Danke! Du bist auf der Purian-Warteliste."
         : "Thank you! You’re on the Purian waitlist.";
 
-    const body =
+    const bodyText =
       lang === "de"
         ? `
 Hallo,
-
 vielen Dank für deine Anmeldung zur Purian-Warteliste.
-Wir melden uns, sobald wir launchen – und du erhältst einen
-exklusiven Rabatt zum Start.
+Wir melden uns, sobald wir launchen – und du erhältst einen exklusiven Rabatt zum Start.
 
 Mit Sorgfalt in Berlin gefertigt.
 Purian
         `
         : `
 Hi,
-
 Thank you for joining the Purian waitlist.
-We’ll notify you when we launch – and you’ll receive an
-exclusive discount on your first order.
+We’ll notify you when we launch – and you’ll receive an exclusive discount on your first order.
 
 Crafted with care in Berlin.
 Purian
@@ -144,16 +191,12 @@ Purian
       from: "Purian <no-reply@puriansoap.de>",
       to: email,
       subject,
-      text: body
+      text: bodyText
     });
 
     return res.status(200).json({ ok: true });
   } catch (err) {
     console.error("Subscribe error:", err);
-
-    return res.status(500).json({
-      error: "Internal server error",
-      details: err?.message || err?.toString() || JSON.stringify(err)
-    });
+    return res.status(500).json({ error: "Internal server error" });
   }
 }
