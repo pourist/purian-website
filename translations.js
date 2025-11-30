@@ -3,7 +3,7 @@ export const translations = {
     brandName: "Purian",
     heroTitle: "Natural Minimal Pure",
     heroText:
-      "Purian crafts natural soaps and anti-dandruff shampoo bars inspired by traditional Iranian formulations. Handmade in Berlin. Launching in 2026.",
+      "Purian crafts natural soaps and anti-dandruff shampoo bars inspired by traditional Oriental formulations. Handmade in Berlin. Launching in 2026.",
     discountNote: "Be first to hear and get an exclusive discount.",
     notifyLabel: "Be the first to know and receive a launch discount.",
     notifyCta: "Notify me",
@@ -19,7 +19,7 @@ export const translations = {
       "Every ingredient serves a purpose. No fillers, no unnecessary irritation.",
     value3Title: "Crafted in Berlin",
     value3Body:
-      "Small batches made with care, tradition, and attention to natural quality.",
+      "Small batches made with care, tradition, and a focus on natural quality.",
     footerText: "© 2025 Purian. All rights reserved.",
     successMessage: "Thank you. We’ll let you know when we launch.",
     errorMessage: "Something went wrong. Please try again in a moment.",
@@ -28,22 +28,22 @@ export const translations = {
 
   de: {
     brandName: "Purian",
-    heroTitle: "Natürlich Minimal   Rein ",
+    heroTitle: "Natürlich Minimal Rein",
     heroText:
-      "Purian entwickelt natürliche Seifen und Anti-Schuppen-Shampoobars, inspiriert von traditionellen iranischen Rezepturen. Handgefertigt in Berlin. Launch 2026.",
+      "Purian entwickelt natürliche Seifen und Anti-Schuppen-Shampoobars, inspiriert von traditionellen orientalischen Rezepturen. Handgefertigt in Berlin. Launch 2026.",
     discountNote: "Erhalte zuerst Bescheid und einen exklusiven Rabatt.",
     notifyLabel: "Trage dich ein und erhalte zum Start einen Rabatt.",
     notifyCta: "Anmelden",
     notifyHint: "Kein Spam. Nur eine E-Mail, wenn wir starten.",
     aboutTitle: "Über Purian",
     aboutBody:
-      "Reinheit und Funktion stehen an erster Stelle. Wir fertigen natürliche Seifen und Shampoobars in kleinen Chargen pflanzenbasiert, hautfreundlich und für eine ausgeglichene Kopfhaut.",
+      "Reinheit und Funktion stehen an erster Stelle. Wir fertigen natürliche Seifen und Shampoobars in kleinen Chargen – pflanzenbasiert, hautfreundlich und für eine ausgeglichene Kopfhaut.",
     value1Title: "Natürliche Inhaltsstoffe",
     value1Body:
-      "Ausgewählte, pflanzliche Rohstoffe für eine sanfte Reinigung und ein gutes Kopfhautgefühl.",
+      "Ausgewählte pflanzliche Rohstoffe für eine sanfte Reinigung und ein angenehmes Kopfhautgefühl.",
     value2Title: "Reduzierte Rezepturen",
     value2Body:
-      "Jeder Inhaltsstoff hat einen Zweck klare Formulierungen ohne Reizstoffe.",
+      "Jeder Inhaltsstoff hat einen klaren Zweck – Formulierungen ohne unnötige Reizstoffe.",
     value3Title: "In Berlin gefertigt",
     value3Body:
       "Kleine Chargen, sorgfältige Herstellung und ein Fokus auf natürliche Qualität.",
