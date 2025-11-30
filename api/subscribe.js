@@ -150,6 +150,10 @@ Purian
     return res.status(200).json({ ok: true });
   } catch (err) {
     console.error("Subscribe error:", err);
-    return res.status(500).json({ error: "Internal server error" });
+
+    return res.status(500).json({
+      error: "Internal server error",
+      details: err?.message || err?.toString() || JSON.stringify(err)
+    });
   }
 }
