@@ -1,81 +1,95 @@
-
 # Purian Landing Page
 
-Early-stage web presence for the Purian brand.
-Static site deployed on Vercel with serverless APIs, Supabase integration, and transactional email support.
+Lightweight static website for the Purian brand.
+Deployed on Vercel with serverless APIs, Supabase waitlist storage, transactional email handling, and full search engine indexing setup.
+
+---
 
 ## Overview
 
-The Purian website is a lightweight, static landing page designed to introduce the brand, collect early-stage waitlist signups, and validate demand before product launch. The system is intentionally minimal but structured to scale into a full production architecture as the brand grows.
+The site introduces the brand, collects early-stage waitlist signups, and establishes the foundational technical and SEO infrastructure for future growth.
+The codebase is intentionally minimal and fast, with clear paths for expansion.
+
+---
 
 ## Tech Stack
 
 ### Frontend
 
 * **HTML / CSS / Vanilla JS**
-  Lightweight, framework-free static site optimized for fast delivery and easy iteration in early development.
-* **Vercel**
-  Used as the hosting and deployment platform.
-  Handles:
-
-  * automatic builds from GitHub
-  * global CDN
-  * SSL certificates
-  * routing
-  * serverless API functions
+  Compact, framework-free frontend optimized for quick loads and simple iteration.
+* **Vercel (Hosting)**
+  Builds from GitHub, global CDN, SSL, routing, and project-level domain management.
 
 ### Backend
 
-* **Serverless Functions (Vercel Functions)**
-  Located under `/api/subscribe.js`
-  Purpose:
+* **Vercel Serverless Functions** (`/api/subscribe.js`)
 
-  * accept POST requests from the landing page
-  * validate and insert email addresses into Supabase
-  * send automated confirmation emails through Resend
+  * Validate POSTed email input
+  * Insert into Supabase table
+  * Send confirmation emails via Resend
+  * Return structured JSON responses
 
 ### Database
 
-* **Supabase**
+* **Supabase (PostgreSQL)**
 
-  * PostgreSQL database
-  * Table: `waitlist`
-  * Fields: `email`, `timestamp`
-  * RLS-enabled table with an `INSERT` policy for `anon`
-  * Supabase keys stored as environment variables in Vercel (not exposed client-side)
+  * Table: `waitlist (email, timestamp)`
+  * RLS: permissive INSERT for serverless function
+  * Keys stored in Vercel environment variables
 
-### Email Infrastructure
+### Email
 
-* **Netcup Webhosting (Email Only)**
-  Used for:
+* **Netcup Webhosting**
 
-  * brand-aligned email addresses (support@, no-reply@, pouriya@, deniz@)
   * IMAP/SMTP mailboxes
-  * DNS (MX, SPF, DKIM, DMARC)
-
+  * MX, SPF, DKIM, DMARC
 * **Resend API**
-  Used for sending transactional emails from the serverless API.
 
-  * Domain: purian.eu
-  * DKIM-verified
-  * “Enable Sending” validated via SPF
-  * No “Enable Receiving” configured (Netcup handles receiving)
+  * Transactional email sending
+  * Domain authenticated (DKIM + SPF)
 
-### DNS Configuration
+---
 
-* Domains: `purian.eu` and `puriansoap.de`
-* Provider: Netcup DNS
-* Configuration:
+## Domains & DNS
 
-  * A record for root (`@`) → Vercel (216.198.79.1)
-  * CNAME for `www` → Vercel DNS hostname
-  * Netcup MX, SPF, DKIM, DMARC for email
-  * Wildcard records removed to prevent SSL and routing conflicts
-  * SPF extended to include Resend:
+**Primary domain:** `purian.eu`
+**Secondary domain:** `puriansoap.de` → permanently redirected (301) to `purian.eu`
 
-    ```
-    v=spf1 mx a include:_spf.webhosting.systems include:spf.resend.com ~all
-    ```
+**DNS provider:** Netcup
+
+Active configuration:
+
+* A record (`@`) → Vercel
+* CNAME (`www`) → Vercel DNS
+* MX/SPF/DKIM/DMARC for Netcup email
+* Resend SPF included
+* Wildcards removed (SSL conflict avoidance)
+
+This setup consolidates domain authority and ensures consistent SEO signals.
+
+---
+
+## SEO Foundation
+
+Included in the project:
+
+* `robots.txt`
+* `sitemap.xml` (submitted to Google and Bing)
+* canonical URL (`https://purian.eu/`)
+* optimized `<head>` metadata
+* Open Graph + Twitter cards
+* structured heading hierarchy with accessible enhancements
+* optimized EN/DE copy via `translations.js`
+
+**Search Console:** Domain verified
+**Bing Webmaster Tools:** Connected (via GSC import)
+
+---
+
+## Analytics
+
+**Vercel Analytics** enabled for traffic monitoring.
 
 ---
 
@@ -83,47 +97,27 @@ The Purian website is a lightweight, static landing page designed to introduce t
 
 ```
 /
-├── index.html            # Landing page markup
-├── style.css             # Styling for the website
-├── app.js                # Frontend logic (fetch call to API)
-├── translations.js       # Simple EN/DE language toggle system
+├── index.html            # SEO-optimized landing page markup
+├── style.css             # Styling
+├── app.js                # Form logic, API calls, language switching
+├── translations.js       # EN/DE translation system
+├── robots.txt            # Crawl permissions
+├── sitemap.xml           # Sitemap for search engines
 ├── assets/
-│   └── hero.jpg          # Hero image used in the landing layout
+│   ├── hero.jpg
+│   └── favicon.png
 ├── api/
 │   └── subscribe.js      # Serverless API for Supabase + Resend
 └── README.md
 ```
 
-### Key Files
-
-#### `api/subscribe.js`
-
-Implements:
-
-* JSON POST parsing
-* input validation
-* insertion into `waitlist` table
-* transactional email via Resend
-* success / failure responses
-
-#### `app.js`
-
-Handles:
-
-* capturing the submitted email
-* calling the API route
-* showing success/errors to the user
-* language switching (DE / EN)
-
 ---
 
 ## Deployment & Environments
 
-* Production deploys automatically from the `main` branch.
-* Development deploys from feature branches via Vercel preview deployments.
-* Environment variables are configured in Vercel (Preview + Production).
-
-**Environment variables used:**
+* Production deploys from `main`
+* Preview deploys from feature branches
+* Environment variables in Vercel:
 
 ```
 SUPABASE_URL
@@ -133,34 +127,24 @@ RESEND_API_KEY
 
 ---
 
-## Operational Notes
-
-* Email inboxes (s****, no***y ..) are managed entirely through Netcup Plesk.
-* SSL issuance for root domains required deleting wildcard records and confirming domain existence in Vercel.
-* Supabase RLS policy: one permissive INSERT policy for `anon` to allow serverless write access.
-* Resend is used only for sending; all receiving stays at Netcup.
-
----
-
 ## Current Scope
 
-The site currently serves as a simple, high-performance waitlist landing page with:
-
-* hero section
-* brand introduction
-* EN/DE language toggle
-* email submission form
-* automatic confirmation emails
-* secured domain configuration
-* stable backend integration
+* Hero section with SEO-optimized `<h1>`
+* EN/DE dynamic translation system
+* Email signup with backend integration
+* Confirmation email automation
+* Fully configured domains and redirects
+* Search engine indexing enabled
+* Analytics active
 
 ---
 
-## Next Steps (Technical)
+## Future Enhancements
 
-* Add analytics (Vercel Analytics or Plausible)
-* Improve form UX and error handling
-* Add additional content sections (About, Values, Ingredients, etc.)
-* Begin modularizing the codebase for future scaling (e.g., switching to a framework when needed)
+* Improved form UX
+* Additional informational sections
+* Optional analytics upgrade (Plausible)
+* Structured data (JSON-LD)
+* Migration to framework when scaling
 
 ---
