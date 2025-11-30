@@ -1,6 +1,3 @@
-Below is a clean, professional, founder-grade README describing the current Purian website codebase, architecture, and tooling. It is minimal, but fully informative, and reflects everything built from the beginning of this project until now.
-
----
 
 # Purian Landing Page
 
