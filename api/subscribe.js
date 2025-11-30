@@ -3,28 +3,102 @@
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 
+// ------------------------------------------------------------
+// Rate limiting: 5 requests per IP per 60 seconds
+// ------------------------------------------------------------
+const RATE_LIMIT = 5;
+const WINDOW_MS = 60 * 1000;
+const ipStore = new Map();
+
+function rateLimit(req, res) {
+  const ip =
+    req.headers["x-forwarded-for"]?.split(",")[0].trim() ||
+    req.connection?.remoteAddress ||
+    "unknown";
+
+  const now = Date.now();
+  const entry = ipStore.get(ip) || { count: 0, windowStart: now };
+
+  if (now - entry.windowStart > WINDOW_MS) {
+    ipStore.set(ip, { count: 1, windowStart: now });
+    return true;
+  }
+
+  entry.count++;
+
+  if (entry.count > RATE_LIMIT) {
+    res.status(429).json({
+      error: "Too many requests. Please try again later."
+    });
+    return false;
+  }
+
+  ipStore.set(ip, entry);
+  return true;
+}
+
+// ------------------------------------------------------------
+// Turnstile verification
+// ------------------------------------------------------------
+async function verifyTurnstile(token, ip) {
+  const secret = process.env.TURNSTILE_SECRET_KEY;
+
+  const response = await fetch(
+    "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        secret,
+        response: token,
+        remoteip: ip
+      })
+    }
+  );
+
+  const data = await response.json();
+  return data.success === true;
+}
+
+// ------------------------------------------------------------
+// Main handler
+// ------------------------------------------------------------
 export default async function handler(req, res) {
+  // Rate limit check already protects before heavy work
+  if (!rateLimit(req, res)) return;
+
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { email, lang } = req.body || {};
+  const { email, lang, token } = req.body || {};
+
+  if (!token) {
+    return res.status(400).json({ error: "Missing verification token" });
+  }
+
+  const ip =
+    req.headers["x-forwarded-for"]?.split(",")[0].trim() ||
+    req.connection?.remoteAddress ||
+    "unknown";
+
+  const verified = await verifyTurnstile(token, ip);
+  if (!verified) {
+    return res.status(400).json({ error: "Bot verification failed" });
+  }
 
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return res.status(400).json({ error: "Invalid email" });
   }
 
-  // Initialize Supabase
   const supabase = createClient(
     process.env.SUPABASE_URL,
     process.env.SUPABASE_ANON_KEY
   );
 
-  // Initialize Resend
   const resend = new Resend(process.env.RESEND_API_KEY);
 
   try {
-    // 1. Insert into Supabase
     const { error } = await supabase
       .from("waitlist")
       .insert([
@@ -34,12 +108,10 @@ export default async function handler(req, res) {
         }
       ]);
 
-    // Ignore duplicate email errors (code 23505)
     if (error && error.code !== "23505") {
       throw error;
     }
 
-    // 2. Prepare thank-you email
     const subject =
       lang === "de"
         ? "Danke! Du bist auf der Purian-Warteliste."
@@ -68,7 +140,6 @@ Crafted with care in Berlin.
 Purian
         `;
 
-    // 3. Send the thank-you email
     await resend.emails.send({
       from: "Purian <no-reply@puriansoap.de>",
       to: email,
